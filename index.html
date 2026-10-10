@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Statement Budget</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="top">
+    <div>
+      <h1>Statement Budget</h1>
+      <p class="muted">Drop in bank or credit card statement PDFs. Parsing happens in your browser; data stays in this browser only.</p>
+    </div>
+    <div class="controls">
+      <label class="btn primary">Upload PDFs<input id="fileInput" type="file" accept="application/pdf" multiple hidden></label>
+      <fieldset class="type-toggle">
+        <legend>Next import is a</legend>
+        <label><input type="radio" name="stype" value="credit" checked> Credit card</label>
+        <label><input type="radio" name="stype" value="debit"> Debit / checking</label>
+      </fieldset>
+      <select id="dashboardSelect" aria-label="Dashboard">
+        <option value="all">All statements</option>
+        <option value="credit">Credit card dashboard</option>
+        <option value="debit">Debit dashboard</option>
+      </select>
+      <select id="monthSelect" aria-label="Month"></select>
+      <button id="exportBtn" class="btn" type="button">Export CSV</button>
+      <button id="clearBtn" class="btn danger" type="button">Clear all</button>
+    </div>
+  </header>
+  <p id="status" class="status" role="status"></p>
+
+  <main>
+    <p id="emptyHint" class="card muted">No transactions yet. Upload a statement PDF or drag one anywhere on this page.</p>
+
+    <section id="cards" class="cards"></section>
+
+    <section class="grid charts-row">
+      <div class="card">
+        <h2>Income vs expenses by month</h2>
+        <div class="chart-box"><canvas id="monthChart"></canvas></div>
+      </div>
+      <div class="card">
+        <h2>Spending by category</h2>
+        <div class="chart-box"><canvas id="categoryChart"></canvas></div>
+      </div>
+      <div class="card hidden" id="categoryDetail">
+        <div class="card-head">
+          <div>
+            <h2 id="categoryDetailTitle"></h2>
+            <small id="categoryDetailTotal" class="muted"></small>
+          </div>
+          <button id="categoryDetailClose" class="btn small" type="button">Close</button>
+        </div>
+        <ul id="categoryDetailList" class="detail-list"></ul>
+      </div>
+      <div class="card wide">
+        <h2>Cumulative spending</h2>
+        <div class="chart-box"><canvas id="dailyChart"></canvas></div>
+      </div>
+    </section>
+
+    <section class="grid two">
+      <div class="card">
+        <h2>Budget</h2>
+        <p class="muted">Enter a monthly budget per category. Budgets scale with the number of months in view.</p>
+        <div class="table-wrap"><table id="budgetTable"></table></div>
+      </div>
+      <div class="card">
+        <h2>Income sources</h2>
+        <div class="table-wrap"><table id="incomeTable"></table></div>
+      </div>
+    </section>
+
+    <section class="card" id="transactionsCard">
+      <div class="card-head">
+        <h2>Transactions <small id="txCount" class="muted"></small></h2>
+        <div class="filters">
+          <input id="search" type="search" placeholder="Search description">
+          <select id="kindFilter" aria-label="Type">
+            <option value="all">All types</option>
+            <option value="expense">Expenses</option>
+            <option value="income">Income</option>
+            <option value="transfer">Transfers</option>
+          </select>
+        </div>
+      </div>
+      <div id="categoryChip" class="filter-chip hidden">
+        <span id="categoryChipText"></span>
+        <button id="clearCategory" class="btn small" type="button">Clear</button>
+      </div>
+      <div class="table-wrap"><table id="txTable"></table></div>
+      <form id="addForm" class="add-form">
+        <strong>Add manually</strong>
+        <input name="date" type="date" required>
+        <input name="description" type="text" placeholder="Description" required>
+        <input name="amount" type="number" min="0" step="0.01" placeholder="Amount" required>
+        <select name="kind" aria-label="Type">
+          <option value="expense">Expense</option>
+          <option value="income">Income</option>
+          <option value="transfer">Transfer</option>
+        </select>
+        <button class="btn primary" type="submit">Add</button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>Imported statements</h2>
+      <ul id="fileList" class="file-list"></ul>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="parser.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

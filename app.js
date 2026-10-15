@@ -362,7 +362,7 @@ async function importFiles(files) {
     setStatus('Please choose PDF files.', true);
     return;
   }
-  const statementType = document.querySelector('input[name="stype"]:checked').value;
+  const fallbackType = document.querySelector('input[name="stype"]:checked').value;
   const messages = [];
   let hasError = false;
   for (const file of pdfs) {
@@ -374,7 +374,10 @@ async function importFiles(files) {
         messages.push(`${file.name} was already imported, so it was skipped.`);
         continue;
       }
-      const parsed = StatementParser.parse(await pdfToPages(buffer), { statementType });
+      const pages = await pdfToPages(buffer);
+      const detected = StatementParser.detectStatementType(pages);
+      const statementType = detected || fallbackType;
+      const parsed = StatementParser.parse(pages, { statementType });
       if (!parsed.length) {
         hasError = true;
         messages.push(`No transactions found in ${file.name}. If it is a scanned image, it needs OCR first.`);
@@ -390,7 +393,8 @@ async function importFiles(files) {
       const sourceId = newId();
       state.sources.push({ id: sourceId, name: file.name, type: statementType, hash });
       for (const t of fresh) state.transactions.push({ ...t, id: newId(), sourceId });
-      messages.push(`${file.name}: imported ${fresh.length}${skipped ? `, skipped ${skipped} duplicates` : ''}.`);
+      const typeNote = detected ? `detected as ${TYPE_LABELS[statementType]}` : `assumed ${TYPE_LABELS[statementType]}`;
+      messages.push(`${file.name}: imported ${fresh.length} (${typeNote})${skipped ? `, skipped ${skipped} duplicates` : ''}.`);
     } catch (err) {
       console.error(err);
       hasError = true;

@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { parse } = require('../parser.js');
+const { parse, detectStatementType } = require('../parser.js');
 
 const pick = (txs, desc) => txs.find(t => t.description.startsWith(desc));
 
@@ -49,6 +49,17 @@ test('debit statement: sections, two-amount rows, and ATM withdrawal', () => {
   assert.equal(pick(txs, 'ATM WITHDRAWAL').category, 'Cash & ATM');
 });
 
+test('BKOFAMERICA MOBILE deposit lines are treated as a transfer, not income', () => {
+  const txs = parse([[
+    'Deposits and other additions',
+    '09/18/26 BKOFAMERICA MOBILE 09/19 3653608201 DEPOSIT *MOBILE CA 1,877.00',
+  ]], { statementType: 'debit' });
+
+  assert.equal(txs.length, 1);
+  assert.equal(txs[0].kind, 'transfer');
+  assert.equal(txs[0].category, 'Transfer');
+});
+
 test('alternate date formats: month names, posting dates, and skipped balance lines', () => {
   const txs = parse([[
     'Jun 3, 2026 STARBUCKS 5.45',
@@ -62,4 +73,35 @@ test('alternate date formats: month names, posting dates, and skipped balance li
   assert.equal(pick(txs, 'STARBUCKS').category, 'Dining Out');
   assert.equal(pick(txs, 'TARGET').description, 'TARGET');
   assert.equal(pick(txs, 'ZELLE').kind, 'income');
+});
+
+test('detectStatementType recognizes credit card wording', () => {
+  const type = detectStatementType([[
+    'Account Summary',
+    'Previous Balance $1,200.00',
+    'Minimum Payment Due $35.00',
+    'Payment Due Date 07/15/2026',
+    'Credit Limit $10,000.00',
+    'Available Credit $8,800.00',
+    'Purchase APR 24.99%',
+    'New Balance $742.41',
+  ]]);
+  assert.equal(type, 'credit');
+});
+
+test('detectStatementType recognizes checking/debit wording', () => {
+  const type = detectStatementType([[
+    'Account Summary',
+    'Beginning balance on August 21, 2026 $8,233.78',
+    'Ending balance on September 21, 2026 $9,388.93',
+    'Deposits and other additions 5,812.53',
+    'Withdrawals and other subtractions -926.04',
+    'Checking Account',
+    'Routing Number 123456789',
+  ]]);
+  assert.equal(type, 'debit');
+});
+
+test('detectStatementType returns null when there is no clear signal', () => {
+  assert.equal(detectStatementType([['Thank you for your business', '06/01 COFFEE SHOP 4.50']]), null);
 });

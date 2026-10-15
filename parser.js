@@ -26,8 +26,10 @@
   const NUMERIC_DATE = /^(\d{1,2})[\/-](\d{1,2})(?:[\/-](\d{4}|\d{2}))?$/;
   const AMOUNT = /^[(+-]?\$?[(+-]?\d[\d,]*\.\d{2}\)?[-+]?$/;
   const SKIP = /\b(beginning|ending|previous|new|opening|closing|statement) balance\b|^total\b|minimum (payment|due)|payment due|available (credit|balance)|^balance\b/i;
-  const TRANSFER = /\bpayment\b.*\bthank you\b|\bautopay\b|\bautomatic payment\b|\bpayment received\b|\btransfer (to|from)\b|\bonline transfer\b|\bxfer\b|\bcredit card payment\b|\bcard payment\b|credit crd|credit card pmt|\bcrd pmt\b|invest|vanguard|fidelity|schwab|brokerage|robinhood/i;
+  const TRANSFER = /\bpayment\b.*\bthank you\b|\bautopay\b|\bautomatic payment\b|\bpayment received\b|\btransfer (to|from)\b|\bonline transfer\b|\bxfer\b|\bcredit card payment\b|\bcard payment\b|credit crd|credit card pmt|\bcrd pmt\b|invest|vanguard|fidelity|schwab|brokerage|robinhood|bkofamerica mobile.*deposit/i;
   const INCOME = /payroll|direct ?dep|\bsalary\b|\bdeposit\b|\brefund\b|\breversal\b|\bcash ?back\b|interest (earned|paid)|\bdividend|zelle (payment )?from|venmo cashout|paycheck/i;
+  const CREDIT_HINTS = /credit limit|available credit|minimum payment due|payment due date|annual percentage rate|\bapr\b|purchase apr|cash advance apr|new balance|previous balance/gi;
+  const DEBIT_HINTS = /checking account|savings account|beginning balance|ending balance|routing number|deposits and other additions|withdrawals and other (?:subtractions|debits)|overdraft protection/gi;
 
   function normalizeYear(y) {
     return y.length === 2 ? 2000 + Number(y) : Number(y);
@@ -105,6 +107,14 @@
     return section || 'expense';
   }
 
+  function detectStatementType(pages) {
+    const text = pages.flat().join(' ');
+    const creditScore = (text.match(CREDIT_HINTS) || []).length;
+    const debitScore = (text.match(DEBIT_HINTS) || []).length;
+    if (creditScore === debitScore) return null;
+    return creditScore > debitScore ? 'credit' : 'debit';
+  }
+
   function categorize(description) {
     for (const [name, pattern] of CATEGORY_RULES) {
       if (pattern.test(description)) return name;
@@ -150,7 +160,7 @@
     return transactions.filter(t => t.date);
   }
 
-  const api = { parse, categorize, CATEGORY_NAMES };
+  const api = { parse, categorize, CATEGORY_NAMES, detectStatementType };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   root.StatementParser = api;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -29,11 +29,13 @@ test('debit statement layout with deposit, ATM/debit, and other subtraction sect
 
   assert.equal(txs.length, 7);
   assert.equal(sum(txs, 'income').toFixed(2), '635.19');
-  assert.equal(sum(txs, 'expense').toFixed(2), '39.25');
-  assert.equal(sum(txs, 'transfer').toFixed(2), '5565.34');
+  assert.equal(sum(txs, 'expense').toFixed(2), '1916.25');
+  assert.equal(sum(txs, 'transfer').toFixed(2), '3688.34');
 
   const mobile = txs.find(t => t.description.startsWith('MOBILE PURCHASE'));
   assert.equal(mobile.category, 'Other');
   assert.equal(txs.find(t => t.description.includes('MINT MOBILE')).category, 'Utilities & Bills');
-  assert.equal(txs.find(t => t.description.startsWith('BKOFAMERICA MOBILE')).kind, 'transfer');
+  const bofaDeposit = txs.find(t => t.description.startsWith('BKOFAMERICA MOBILE'));
+  assert.equal(bofaDeposit.kind, 'expense');
+  assert.equal(bofaDeposit.category, 'Credit Card Payment');
 });

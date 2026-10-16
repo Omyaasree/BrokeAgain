@@ -2,10 +2,11 @@
   const CATEGORY_NAMES = [
     'Groceries', 'Dining Out', 'Transportation', 'Shopping', 'Subscriptions',
     'Utilities & Bills', 'Health', 'Travel', 'Entertainment', 'Gifts & Donations',
-    'Cash & ATM', 'Fees & Interest', 'Insurance', 'Housing', 'Other',
+    'Cash & ATM', 'Fees & Interest', 'Insurance', 'Housing', 'Credit Card Payment', 'Other',
   ];
 
   const CATEGORY_RULES = [
+    ['Credit Card Payment', /bkofamerica mobile.*deposit/i],
     ['Subscriptions', /netflix|spotify|hulu|disney\+|youtube (premium|tv)|icloud|apple\.com\/bill|prime video|patreon|subscription|adobe|openai|chatgpt|anthropic/i],
     ['Groceries', /grocer|whole ?foods|wholefds|trader joe|kroger|safeway|aldi|publix|wegmans|costco|h-e-b|food lion|sprouts/i],
     ['Dining Out', /restaurant|cafe|coffee|starbucks|dunkin|mcdonald|chipotle|doordash|uber ?eats|grubhub|pizza|burger|taco|sushi|bar & grill|dining|wendy|subway|mexican|molcajetes|melt|bizza|ashley/i],
@@ -26,7 +27,8 @@
   const NUMERIC_DATE = /^(\d{1,2})[\/-](\d{1,2})(?:[\/-](\d{4}|\d{2}))?$/;
   const AMOUNT = /^[(+-]?\$?[(+-]?\d[\d,]*\.\d{2}\)?[-+]?$/;
   const SKIP = /\b(beginning|ending|previous|new|opening|closing|statement) balance\b|^total\b|minimum (payment|due)|payment due|available (credit|balance)|^balance\b/i;
-  const TRANSFER = /\bpayment\b.*\bthank you\b|\bautopay\b|\bautomatic payment\b|\bpayment received\b|\btransfer (to|from)\b|\bonline transfer\b|\bxfer\b|\bcredit card payment\b|\bcard payment\b|credit crd|credit card pmt|\bcrd pmt\b|invest|vanguard|fidelity|schwab|brokerage|robinhood|bkofamerica mobile.*deposit/i;
+  const TRANSFER = /\bpayment\b.*\bthank you\b|\bautopay\b|\bautomatic payment\b|\bpayment received\b|\btransfer (to|from)\b|\bonline transfer\b|\bxfer\b|\bcredit card payment\b|\bcard payment\b|credit crd|credit card pmt|\bcrd pmt\b|invest|vanguard|fidelity|schwab|brokerage|robinhood/i;
+  const FORCE_EXPENSE = /bkofamerica mobile.*deposit/i;
   const INCOME = /payroll|direct ?dep|\bsalary\b|\bdeposit\b|\brefund\b|\breversal\b|\bcash ?back\b|interest (earned|paid)|\bdividend|zelle (payment )?from|venmo cashout|paycheck/i;
   const CREDIT_HINTS = /credit limit|available credit|minimum payment due|payment due date|annual percentage rate|\bapr\b|purchase apr|cash advance apr|new balance|previous balance/gi;
   const DEBIT_HINTS = /checking account|savings account|beginning balance|ending balance|routing number|deposits and other additions|withdrawals and other (?:subtractions|debits)|overdraft protection/gi;
@@ -101,6 +103,7 @@
   }
 
   function classify(description, amount, section, statementType) {
+    if (FORCE_EXPENSE.test(description)) return 'expense';
     if (TRANSFER.test(description)) return 'transfer';
     if (INCOME.test(description) || amount.credit) return 'income';
     if (amount.negative && statementType === 'credit') return 'income';

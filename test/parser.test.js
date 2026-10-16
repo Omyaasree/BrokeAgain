@@ -49,15 +49,15 @@ test('debit statement: sections, two-amount rows, and ATM withdrawal', () => {
   assert.equal(pick(txs, 'ATM WITHDRAWAL').category, 'Cash & ATM');
 });
 
-test('BKOFAMERICA MOBILE deposit lines are treated as a transfer, not income', () => {
+test('BKOFAMERICA MOBILE deposit lines are treated as a credit card payment expense, not income', () => {
   const txs = parse([[
     'Deposits and other additions',
     '09/18/26 BKOFAMERICA MOBILE 09/19 3653608201 DEPOSIT *MOBILE CA 1,877.00',
   ]], { statementType: 'debit' });
 
   assert.equal(txs.length, 1);
-  assert.equal(txs[0].kind, 'transfer');
-  assert.equal(txs[0].category, 'Transfer');
+  assert.equal(txs[0].kind, 'expense');
+  assert.equal(txs[0].category, 'Credit Card Payment');
 });
 
 test('alternate date formats: month names, posting dates, and skipped balance lines', () => {
